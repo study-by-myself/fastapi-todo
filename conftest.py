@@ -2,7 +2,7 @@ import pytest
 from sqlmodel import SQLModel
 
 from db import init_db_engine, init_async_session
-from models import User, Category
+from models import User, Category, Todo
 
 
 @pytest.fixture
@@ -39,3 +39,15 @@ async def category(db_session, user):
     db_session.add(category)
     await db_session.commit()
     return category
+
+
+@pytest.fixture
+async def todo(db_session, user, category):
+    todo = Todo(
+        title="Test Todo",
+        description="Test Description",
+        category_id=category.id,
+    )
+    db_session.add(todo)
+    await db_session.commit()
+    return todo

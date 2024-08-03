@@ -7,8 +7,8 @@ from categories import (
     delete_category,
     get_categories,
 )
-from models import User, Category
-from todo import create_todo, CreateTodoPayload
+from models import User, Todo
+from todo import create_todo, CreateTodoPayload, get_todos
 from users import signup_user
 
 
@@ -33,12 +33,8 @@ async def test_signup_user(db_session):
     assert user.categories[0].name == "John Doe Default"
 
 
-async def test_create_todo(db_session, user):
-    category = Category(name="Test Category", user_id=user.id)
-    db_session.add(category)
-    await db_session.commit()
-
-    todo = await create_todo(
+async def test_create_todo(db_session, user, category):
+    result_todo = await create_todo(
         CreateTodoPayload(
             title="Test Todo", description="Test Description", category_id=category.id
         ),
@@ -46,10 +42,30 @@ async def test_create_todo(db_session, user):
         user,
     )
 
-    assert todo.title == "Test Todo"
-    assert todo.description == "Test Description"
-    assert todo.status == "todo"
-    assert todo.category_id == 1
+    assert result_todo.title == "Test Todo"
+    assert result_todo.description == "Test Description"
+    assert result_todo.status == "todo"
+    assert result_todo.category_id == category.id
+
+
+async def test_get_todo_list(db_session, user, category, todo):
+    todo2 = Todo(
+        title="Test Todo 2", description="Test Description 2", category_id=category.id
+    )
+    db_session.add(todo2)
+    await db_session.commit()
+
+    todos = await get_todos(
+        category.id,
+        db_session,
+        user,
+    )
+
+    assert len(todos) == 2
+    assert todos[0].title == "Test Todo"
+    assert todos[0].description == "Test Description"
+    assert todos[0].status == "todo"
+    assert todos[0].category_id == category.id
 
 
 async def test_create_category(db_session, user):
