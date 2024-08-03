@@ -22,9 +22,17 @@ async def signup_user(payload: User, db_session: UseDbSession) -> User:
 async def login_user(username: str, password: str, db_session: UseDbSession) -> User:
     stmt = select(User).where(User.username == username)
     result = await db_session.execute(stmt)
-    user = result.scalars().first()
+    user = result.scalar_one()
     if user and user.password == password:
         return user
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
 
+@router.get("/user/")
+async def get_user(username: str, db_session: UseDbSession) -> User:
+    stmt = select(User).where(User.username == username)
+    result = await db_session.execute(stmt)
+    user = result.scalar_one()
+    if user:
+        return user
+    raise HTTPException(status_code=404, detail="User not found")
