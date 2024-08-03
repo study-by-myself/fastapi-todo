@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from db import use_session
-from models import User
+from models import User, Category
 
 UseDbSession = Annotated[AsyncSession, Depends(use_session)]
 router = APIRouter(prefix="/auth")
@@ -15,6 +15,13 @@ async def signup_user(payload: User, db_session: UseDbSession) -> User:
     user = User(**payload.model_dump())
     db_session.add(user)
     await db_session.commit()
+
+    category = Category(name=f"{user.name} Default", user_id=user.id)
+    db_session.add(category)
+    await db_session.commit()
+
+    await db_session.refresh(user)
+
     return user
 
 

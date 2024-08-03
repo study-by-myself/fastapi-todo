@@ -18,3 +18,5 @@ async def test_create_user(db_session):
 async def test_signup_user(db_session):
     user = await signup_user(User(name="John Doe", username="johndoe", password="password", tmi="tmi"), db_session)
     assert user.username == "johndoe"
+
+    assert user.categories[0].name == "John Doe Default"
