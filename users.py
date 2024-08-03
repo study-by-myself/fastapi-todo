@@ -1,12 +1,9 @@
-from fastapi import Depends, HTTPException, APIRouter
-from typing import Annotated
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import HTTPException, APIRouter
 from sqlmodel import select
 
-from db import use_session
+from db import UseDbSession
 from models import User, Category
 
-UseDbSession = Annotated[AsyncSession, Depends(use_session)]
 router = APIRouter(prefix="/auth")
 
 
