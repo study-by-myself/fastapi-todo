@@ -1,15 +1,20 @@
+import abc
 from datetime import datetime
 
 from sqlmodel import SQLModel as _SQLModel, Field, func, DateTime, Column
 
 
-class SQLModel(_SQLModel):
+class SQLModel(_SQLModel, abc.ABC):
+    __abstract__ = True
+
     id: int = Field(default=None, primary_key=True)
     created: datetime = Field(
-        sa_column=Column(DateTime, server_default=func.now()),
+        sa_type=DateTime,
+        sa_column_kwargs={"server_default": func.now()},
     )
     updated: datetime = Field(
-        sa_column=Column(DateTime, server_default=func.now(), server_onupdate=func.now()),
+        sa_type=DateTime,
+        sa_column_kwargs={"server_default": func.now(), "server_onupdate": func.now()},
     )
     deleted: datetime = Field(nullable=True)
 
