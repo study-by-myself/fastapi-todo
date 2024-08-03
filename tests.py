@@ -1,5 +1,6 @@
 from sqlmodel import select
 
+from categories import create_category, get_category, patch_category
 from models import User, Category
 from todo import create_todo, CreateTodoPayload
 from users import signup_user
@@ -47,3 +48,57 @@ async def test_create_todo(db_session):
     assert todo.description == "Test Description"
     assert todo.status == "todo"
     assert todo.category_id == 1
+
+
+async def test_create_category(db_session):
+    user = User(name="John Doe", username="johndoe", password="password", tmi="tmi")
+    db_session.add(user)
+    await db_session.commit()
+
+    category = await create_category(
+        "Test Category",
+        db_session,
+        user,
+    )
+
+    assert category.name == "Test Category"
+    assert category.user_id == 1
+
+
+async def test_get_category(db_session):
+    user = User(name="John Doe", username="johndoe", password="password", tmi="tmi")
+    db_session.add(user)
+    await db_session.commit()
+
+    category = Category(name="Test Category", user_id=user.id)
+    db_session.add(category)
+    await db_session.commit()
+
+    category = await get_category(
+        category.id,
+        db_session,
+        user,
+    )
+
+    assert category.name == "Test Category"
+    assert category.user_id == 1
+
+
+async def test_patch_category(db_session):
+    user = User(name="John Doe", username="johndoe", password="password", tmi="tmi")
+    db_session.add(user)
+    await db_session.commit()
+
+    category = Category(name="Test Category", user_id=user.id)
+    db_session.add(category)
+    await db_session.commit()
+
+    category = await patch_category(
+        category.id,
+        "New Category Name",
+        db_session,
+        user,
+    )
+
+    assert category.name == "New Category Name"
+    assert category.user_id == 1
