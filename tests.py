@@ -1,6 +1,8 @@
 from models import User
 from sqlmodel import select
 
+from users import signup_user
+
 
 async def test_create_user(db_session):
     user = User(name="John Doe", username="johndoe", password="password", tmi="tmi")
@@ -13,4 +15,6 @@ async def test_create_user(db_session):
     assert user.username == "johndoe"
 
 
-
+async def test_signup_user(db_session):
+    user = await signup_user(User(name="John Doe", username="johndoe", password="password", tmi="tmi"), db_session)
+    assert user.username == "johndoe"
