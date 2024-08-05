@@ -2,7 +2,8 @@ import abc
 from datetime import datetime
 from enum import Enum
 
-from sqlmodel import SQLModel as _SQLModel, Field, func, DateTime, Relationship
+from sqlalchemy.ext.hybrid import hybrid_property
+from sqlmodel import SQLModel as _SQLModel, Field, func, DateTime, Relationship, null
 from sqlmodel._compat import SQLModelConfig
 
 
@@ -19,6 +20,8 @@ class SQLModel(_SQLModel, abc.ABC):
         sa_column_kwargs={"server_default": func.now(), "server_onupdate": func.now()},
     )
     deleted: datetime = Field(nullable=True)
+
+    model_config = SQLModelConfig(ignored_types=(hybrid_property,))
 
 
 class User(SQLModel, table=True):
@@ -45,6 +48,14 @@ class Category(SQLModel, table=True):
         back_populates="category", sa_relationship_kwargs={"lazy": "selectin"}
     )
 
+    @hybrid_property
+    def is_deleted(self) -> bool:
+        return self.deleted is not None
+
+    @is_deleted.expression
+    def is_deleted(cls):
+        return ~cls.deleted.is_(null())
+
 
 class TodoStatus(str, Enum):
     TODO = "todo"
@@ -63,3 +74,11 @@ class Todo(SQLModel, table=True):
     )
 
     model_config = SQLModelConfig(arbitrary_types_allowed=True)
+
+    @hybrid_property
+    def is_deleted(self) -> bool:
+        return self.deleted is not None
+
+    @is_deleted.expression
+    def is_deleted(cls):
+        return ~cls.deleted.is_(null())

@@ -8,7 +8,7 @@ from categories import (
     get_categories,
 )
 from models import User, Todo
-from todo import create_todo, CreateTodoPayload, get_todos
+from todo import create_todo, CreateTodoPayload, get_todos, TodoParams
 from users import signup_user
 
 
@@ -49,6 +49,7 @@ async def test_create_todo(db_session, user, category):
 
 
 async def test_get_todo_list(db_session, user, category, todo):
+    todo_params = TodoParams.model_validate({"category_id": category.id})
     todo2 = Todo(
         title="Test Todo 2", description="Test Description 2", category_id=category.id
     )
@@ -56,7 +57,7 @@ async def test_get_todo_list(db_session, user, category, todo):
     await db_session.commit()
 
     todos = await get_todos(
-        category.id,
+        todo_params,
         db_session,
         user,
     )
@@ -86,6 +87,7 @@ async def test_get_categories(db_session, user, category):
     )
 
     assert len(categories) == 1
+    assert categories[0].is_deleted is False
     assert categories[0].name == "Test Category"
     assert categories[0].user_id == user.id
 

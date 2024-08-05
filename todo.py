@@ -1,10 +1,12 @@
 from datetime import datetime
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException
+from sqlalchemy import update
 from sqlmodel import select, null
 
 from db import UseDbSession, UseUser
-from models import Todo, Category
+from models import Todo, Category, TodoStatus
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/todo")
@@ -39,22 +41,49 @@ async def create_todo(
     return todo
 
 
+class TodoParams(BaseModel):
+    category_id: int
+    page: int = Field(default=1, ge=1)
+    limit: int = Field(default=10, ge=1)
+    ordering: Literal["id", "-id", "due_date", "-due_date"] = Field(default="id")
+    status: Optional[TodoStatus] = None
+
+
 @router.get("/")
-async def get_todos(category_id, db_session: UseDbSession, user: UseUser):
+async def get_todos(payload: TodoParams, db_session: UseDbSession, user: UseUser):
     statement = (
-        select(Todo)
-        .where(
-            Todo.deleted.is_(null()),
+        (
+            select(Todo)
+            .where(
+                ~Todo.is_deleted,
+            )
+            .join(Category)
+            .where(
+                Category.user_id == user.id,
+                ~Category.is_deleted,
+            )
         )
-        .join(Category)
-        .where(
-            Category.user_id == user.id,
-            Category.deleted.is_(null()),
-        )
+        .offset((payload.page - 1) * payload.limit)
+        .limit(payload.limit)
     )
 
-    if category_id:
-        statement = statement.where(Todo.category_id == category_id)
+    query_ordering = payload.ordering
+    match query_ordering:
+        case "due_date" | "-due_date":
+            ordering = Todo.due_date
+        case _:
+            ordering = Todo.id
+
+    if query_ordering.startswith("-"):
+        statement = statement.order_by(ordering.desc())
+    else:
+        statement = statement.order_by(ordering.asc())
+
+    if payload.category_id:
+        statement = statement.where(Todo.category_id == payload.category_id)
+
+    if payload.status:
+        statement = statement.where(Todo.status == payload.status)
 
     result = await db_session.execute(statement)
     todos = result.scalars().all()
